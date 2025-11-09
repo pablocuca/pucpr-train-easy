@@ -1,0 +1,68 @@
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+/// Template para configurar as opções do Firebase
+/// Copie este arquivo para firebase_options.dart e preencha com suas credenciais
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      return web;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.macOS:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      case TargetPlatform.windows:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      case TargetPlatform.linux:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      default:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions are not supported for this platform.',
+        );
+    }
+  }
+
+  // Preencha com suas credenciais do Firebase Console
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'SUA_WEB_API_KEY_AQUI',
+    appId: 'SEU_WEB_APP_ID_AQUI',
+    messagingSenderId: 'SEU_SENDER_ID',
+    projectId: 'SEU_PROJECT_ID',
+    authDomain: 'SEU_PROJECT_ID.firebaseapp.com',
+    databaseURL: 'https://SEU_PROJECT_ID.firebaseio.com',
+    storageBucket: 'SEU_PROJECT_ID.firebasestorage.app',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'SUA_ANDROID_API_KEY_AQUI',
+    appId: 'SEU_ANDROID_APP_ID_AQUI',
+    messagingSenderId: 'SEU_SENDER_ID',
+    projectId: 'SEU_PROJECT_ID',
+    databaseURL: 'https://SEU_PROJECT_ID.firebaseio.com',
+    storageBucket: 'SEU_PROJECT_ID.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'SUA_IOS_API_KEY_AQUI',
+    appId: 'SEU_IOS_APP_ID_AQUI',
+    messagingSenderId: 'SEU_SENDER_ID',
+    projectId: 'SEU_PROJECT_ID',
+    databaseURL: 'https://SEU_PROJECT_ID.firebaseio.com',
+    storageBucket: 'SEU_PROJECT_ID.firebasestorage.app',
+    iosBundleId: 'br.com.pablocustodio',
+  );
+}

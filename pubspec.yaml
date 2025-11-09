@@ -1,0 +1,38 @@
+name: traineasy
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+dependencies:
+  widgetbook: ^3.20.0
+  intl: 0.20.2
+  cloud_firestore: '>=5.5.0'
+  firebase_auth: '>=5.3.3'
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  firebase_core: ^4.2.1
+  flutter_dotenv: ^5.1.0
+  train_easy_design_system:
+    path: ./train_easy_design_system
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/dreamflow_icon.jpg
+  remove_alpha_ios: true

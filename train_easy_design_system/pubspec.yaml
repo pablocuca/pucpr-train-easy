@@ -1,0 +1,18 @@
+name: train_easy_design_system
+description: Design system package for TrainEasy (colors, tokens, components, widgetbook stories).
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: '>=2.18.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  widgetbook: ^0.7.0
+
+flutter:
+  uses-material-design: true
