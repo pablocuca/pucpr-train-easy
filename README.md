@@ -42,12 +42,14 @@ lib/
 ### Instalação
 
 1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/[seu-usuario]/traineasy.git
 cd traineasy
 ```
 
 2. **Instale as dependências**
+
 ```bash
 flutter pub get
 ```
@@ -55,6 +57,7 @@ flutter pub get
 3. **Configure o Firebase** (veja seção abaixo)
 
 4. **Execute o aplicativo**
+
 ```bash
 flutter run
 ```
@@ -78,12 +81,14 @@ Este projeto **NÃO** inclui as credenciais do Firebase por questões de seguran
 #### 2. Adicione seu Aplicativo
 
 **Para Android:**
+
 1. No Firebase Console, clique em "Adicionar aplicativo" → Android
 2. Registre o pacote: `br.com.pablocustodio` (ou altere no seu projeto)
 3. Baixe o `google-services.json`
 4. Coloque em: `android/app/google-services.json`
 
 **Para iOS:**
+
 1. No Firebase Console, clique em "Adicionar aplicativo" → iOS
 2. Registre o bundle ID: `br.com.pablocustodio`
 3. Baixe o `GoogleService-Info.plist`
@@ -92,11 +97,13 @@ Este projeto **NÃO** inclui as credenciais do Firebase por questões de seguran
 #### 3. Ative os Serviços Necessários
 
 **Autenticação:**
+
 1. Vá para "Authentication" → "Método de login"
 2. Ative "Email/Senha"
 3. Configure as regras de segurança
 
 **Firestore Database:**
+
 1. Vá para "Firestore Database"
 2. Crie um banco de dados (modo de teste inicialmente)
 3. Configure as regras de segurança:
@@ -109,7 +116,7 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     match /workouts/{workoutId} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if request.auth != null &&
         request.auth.uid == resource.data.userId;
     }
   }
@@ -146,6 +153,7 @@ IOS_BUNDLE_ID=com.seu.dominio.traineasy
 #### 5. Configure as Opções do Firebase
 
 Execute o comando FlutterFire CLI:
+
 ```bash
 flutterfire configure
 ```
@@ -164,7 +172,7 @@ class DefaultFirebaseOptions {
     databaseURL: 'SUA_DATABASE_URL',
     storageBucket: 'SEU_STORAGE_BUCKET',
   );
-  
+
   // Configure também para web e iOS se necessário
 }
 ```
@@ -179,11 +187,13 @@ class DefaultFirebaseOptions {
 ## 🧪 Testes
 
 Execute os testes unitários:
+
 ```bash
 flutter test
 ```
 
 Execute testes de widget:
+
 ```bash
 flutter test test/widget/
 ```
@@ -191,16 +201,19 @@ flutter test test/widget/
 ## 📦 Build e Deploy
 
 ### Android
+
 ```bash
 flutter build apk --release
 ```
 
 ### iOS
+
 ```bash
 flutter build ios --release
 ```
 
 ### Web
+
 ```bash
 flutter build web --release
 ```
@@ -231,7 +244,7 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 👥 Autor
 
-**[Seu Nome]** - [LinkedIn](https://linkedin.com/in/seu-perfil) - [GitHub](https://github.com/seu-usuario)
+**[Pablo Custódio]** - [LinkedIn](https://linkedin.com/in/pablocustodio) - [GitHub](https://github.com/pablocuca)
 
 ## 🙏 Agradecimentos
 
@@ -244,6 +257,7 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 ## ⚠️ Disclaimer
 
 Este é um projeto educacional. Para uso em produção:
+
 - Configure corretamente as regras de segurança do Firebase
 - Implemente monitoramento e analytics
 - Realize testes de segurança
