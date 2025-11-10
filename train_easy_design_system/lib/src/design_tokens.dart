@@ -35,6 +35,20 @@ class AppTypography {
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
+  // Título secundário (para títulos de páginas)
+  static const TextStyle h2 = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+  // Subtítulo/Seção (para cabeçalhos de blocos)
+  static const TextStyle h3 = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
   static const TextStyle body = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
@@ -62,6 +76,8 @@ ThemeData buildTrainEasyTheme() {
     ),
     textTheme: const TextTheme(
       headlineMedium: AppTypography.h1,
+      headlineSmall: AppTypography.h2,
+      titleMedium: AppTypography.h3,
       bodyMedium: AppTypography.body,
       bodySmall: AppTypography.caption,
     ),

@@ -4,7 +4,7 @@ import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/usecase/usecase.dart';
 import 'package:traineasy/core/result/result.dart';
 import 'package:traineasy/features/auth/domain/entities/auth_user.dart';
-import 'package:traineasy/features/auth/presentation/pages/login_page.dart';
+import 'package:traineasy/presentation/onboarding/welcome_page.dart';
 
 class AuthGate extends StatelessWidget {
   final Widget childWhenAuthed;
@@ -21,11 +21,11 @@ class AuthGate extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData) {
-          return childWhenUnauthed ?? const LoginPage();
+          return childWhenUnauthed ?? const WelcomePage();
         }
         final res = snapshot.data!;
         if (res is Err<Stream<AuthUser?>>) {
-          return childWhenUnauthed ?? const LoginPage();
+          return childWhenUnauthed ?? const WelcomePage();
         }
         final stream = (res as Ok<Stream<AuthUser?>>).data;
         return StreamBuilder<AuthUser?>(
@@ -36,7 +36,7 @@ class AuthGate extends StatelessWidget {
             }
             final authed = snap.data != null;
             if (authed) return childWhenAuthed;
-            return childWhenUnauthed ?? const LoginPage();
+            return childWhenUnauthed ?? const WelcomePage();
           },
         );
       },
