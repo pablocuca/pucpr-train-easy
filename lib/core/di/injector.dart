@@ -8,6 +8,7 @@ import 'package:traineasy/features/auth/domain/usecases/register_with_email_pass
 import 'package:traineasy/features/auth/domain/usecases/send_password_reset.dart';
 import 'package:traineasy/features/auth/domain/usecases/sign_in_with_email_password.dart';
 import 'package:traineasy/features/auth/domain/usecases/sign_out.dart';
+import 'package:traineasy/core/ai/gemini_service.dart';
 
 class Injector {
   static late final AuthRepository authRepository;
@@ -18,6 +19,7 @@ class Injector {
   static late final RegisterWithEmailPassword registerWithEmailPassword;
   static late final SendPasswordReset sendPasswordReset;
   static late final SignOut signOut;
+  static late final GeminiService gemini;
 
   static Future<void> init() async {
     final fbAuth = fb.FirebaseAuth.instance;
@@ -29,5 +31,8 @@ class Injector {
     registerWithEmailPassword = RegisterWithEmailPassword(authRepository);
     sendPasswordReset = SendPasswordReset(authRepository);
     signOut = SignOut(authRepository);
+
+    // AI service
+    gemini = GeminiService();
   }
 }

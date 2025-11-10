@@ -19,7 +19,6 @@ Future<void> main() async {
     debugPrint('  FIREBASE_PROJECT_ID: ${EnvironmentConfig.projectId.isEmpty ? 'VAZIO' : 'OK'}');
     debugPrint('  FIREBASE_ANDROID_APP_ID: ${EnvironmentConfig.androidAppId.isEmpty ? 'VAZIO' : 'OK'}');
     debugPrint('  FIREBASE_IOS_APP_ID: ${EnvironmentConfig.iosAppId.isEmpty ? 'VAZIO' : 'OK'}');
-    debugPrint('  FIREBASE_WEB_APP_ID: ${EnvironmentConfig.webAppId.isEmpty ? 'VAZIO' : 'OK'}');
     debugPrint('  FIREBASE_API_KEY: ${EnvironmentConfig.apiKey.isEmpty ? 'VAZIO' : 'OK'}');
     debugPrint('  FIREBASE_AUTH_DOMAIN: ${EnvironmentConfig.authDomain.isEmpty ? 'VAZIO' : 'OK'}');
     debugPrint('  FIREBASE_DATABASE_URL: ${EnvironmentConfig.databaseUrl.isEmpty ? 'VAZIO' : 'OK'}');
