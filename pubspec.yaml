@@ -17,6 +17,8 @@ dependencies:
   google_fonts: ^6.1.0
   firebase_core: ^4.2.1
   flutter_dotenv: ^5.1.0
+  google_generative_ai: ^0.4.6
+  http: ^1.1.0
   train_easy_design_system:
     path: ./train_easy_design_system
 

@@ -138,7 +138,6 @@ Edite o arquivo `.env` com suas credenciais do Firebase:
 FIREBASE_PROJECT_ID=seu_project_id_aqui
 FIREBASE_ANDROID_APP_ID=seu_android_app_id_aqui
 FIREBASE_IOS_APP_ID=seu_ios_app_id_aqui
-FIREBASE_WEB_APP_ID=seu_web_app_id_aqui
 FIREBASE_API_KEY=sua_api_key_aqui
 FIREBASE_AUTH_DOMAIN=sua_auth_domain_aqui
 FIREBASE_DATABASE_URL=sua_database_url_aqui
@@ -173,7 +172,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'SEU_STORAGE_BUCKET',
   );
 
-  // Configure também para web e iOS se necessário
+  // Configure também para iOS se necessário
 }
 ```
 
@@ -183,6 +182,56 @@ class DefaultFirebaseOptions {
 - Use variáveis de ambiente para dados sensíveis
 - Configure regras de segurança no Firebase
 - Ative a autenticação antes de liberar para produção
+
+## 🤖 Integração com Gemini (AI)
+
+Esta base já inclui a integração com a API do Gemini para futuras features de IA.
+
+### Configuração
+
+1. Adicione sua chave no `.env` (não commitá-la):
+
+```env
+# AI Configuration
+GEMINI_API_KEY=sua_chave_gemini_aqui
+# Opcional: defina o modelo explicitamente, útil se sua chave
+# não tiver acesso aos modelos mais novos
+# Exemplos: gemini-1.5-flash-latest, gemini-1.0-pro-latest
+GEMINI_MODEL=gemini-1.5-flash-latest
+```
+
+2. Instale as dependências (se necessário):
+
+```bash
+flutter pub get
+```
+
+### Uso
+
+O serviço `GeminiService` está disponível via `Injector`.
+
+```dart
+import 'package:traineasy/core/di/injector.dart';
+
+Future<void> exemploGemini() async {
+  final texto = await Injector.gemini.generateText('Explique treino de força para iniciantes.');
+  // Use o texto gerado na sua UI
+}
+```
+
+Notas:
+- O serviço exige `GEMINI_API_KEY` configurada; caso contrário, lança erro.
+- Modelo padrão: `gemini-1.5-flash-latest`.
+- Fallbacks automáticos: `gemini-1.5-pro-latest`, `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-1.0-pro-latest`, `gemini-1.0-pro`.
+- Se sua chave estiver no nível gratuito, alguns modelos podem exigir habilitar faturamento.
+- Em caso de erro de modelo não suportado, defina `GEMINI_MODEL` no `.env` com um modelo suportado pela sua chave e reinicie.
+
+#### Segurança (Gemini)
+- `.env` está no `.gitignore` e não deve ser commitado.
+- A chave é enviada via cabeçalho HTTP nas chamadas de descoberta (`ListModels`), evitando exposição em URLs.
+- Controle de logs: defina `ENABLE_GEMINI_LOGS=false` em produção para evitar impressão de detalhes da integração.
+- Evite logar prompts e respostas que contenham dados pessoais (PII) ou informações sensíveis.
+- Se trocar de chave/projeto, valide acesso aos modelos via botão de teste e ajuste `GEMINI_MODEL` conforme necessário.
 
 ## 🧪 Testes
 
@@ -212,12 +261,6 @@ flutter build apk --release
 flutter build ios --release
 ```
 
-### Web
-
-```bash
-flutter build web --release
-```
-
 ## 🎨 Design System
 
 O projeto inclui um pacote separado de design system em `train_easy_design_system/`:
@@ -225,10 +268,9 @@ O projeto inclui um pacote separado de design system em `train_easy_design_syste
 ```bash
 cd train_easy_design_system
 flutter pub get
-flutter run -d chrome
+flutter run
 ```
-
-Acesse o Widgetbook para ver todos os componentes em: `http://localhost:8080`
+Execute em um emulador/dispositivo para visualizar o Widgetbook.
 
 ## 🤝 Contribuindo
 

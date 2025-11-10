@@ -9,7 +9,6 @@ class EnvironmentConfig {
   static String get projectId => dotenv.get('FIREBASE_PROJECT_ID', fallback: '');
   static String get androidAppId => dotenv.get('FIREBASE_ANDROID_APP_ID', fallback: '');
   static String get iosAppId => dotenv.get('FIREBASE_IOS_APP_ID', fallback: '');
-  static String get webAppId => dotenv.get('FIREBASE_WEB_APP_ID', fallback: '');
   static String get apiKey => dotenv.get('FIREBASE_API_KEY', fallback: '');
   static String get authDomain => dotenv.get('FIREBASE_AUTH_DOMAIN', fallback: '');
   static String get databaseUrl => dotenv.get('FIREBASE_DATABASE_URL', fallback: '');
@@ -21,19 +20,27 @@ class EnvironmentConfig {
   static String get androidPackageName => dotenv.get('ANDROID_PACKAGE_NAME', fallback: 'com.example.traineasy');
   static String get iosBundleId => dotenv.get('IOS_BUNDLE_ID', fallback: 'com.example.traineasy');
 
+  // AI Configuration
+  static String get geminiApiKey => dotenv.get('GEMINI_API_KEY', fallback: '');
+  static String get geminiModel => dotenv.get('GEMINI_MODEL', fallback: '');
+  static bool get enableGeminiLogs {
+    final raw = dotenv.get('ENABLE_GEMINI_LOGS', fallback: 'false');
+    final v = raw.trim().toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
+
   // Validation
   static bool get isValid {
-    return projectId.isNotEmpty && 
-           androidAppId.isNotEmpty && 
-           iosAppId.isNotEmpty && 
-           webAppId.isNotEmpty;
+    // Mobile-only: valida Android e iOS
+    return projectId.isNotEmpty &&
+        androidAppId.isNotEmpty &&
+        iosAppId.isNotEmpty;
   }
 
   static Map<String, String> get firebaseOptions => {
     'projectId': projectId,
     'androidAppId': androidAppId,
     'iosAppId': iosAppId,
-    'webAppId': webAppId,
     'apiKey': apiKey,
     'authDomain': authDomain,
     'databaseUrl': databaseUrl,
