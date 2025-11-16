@@ -9,6 +9,8 @@ Um aplicativo Flutter para gerenciamento de treinos pessoais, permitindo que usu
 - 📝 **Gerenciamento de Exercícios** - Adicione e acompanhe exercícios
 - 🎨 **Design System** - Interface moderna e responsiva
 - 🔒 **Segurança** - Proteção de dados com Firebase Security Rules
+- 🤖 **Treino por IA estruturado** - Visual consistente do plano gerado
+- 🗒️ **Orientações do Plano** - Bottom sheet dedicado na tela de treino
 
 ## 🏗️ Arquitetura
 

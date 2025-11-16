@@ -6,7 +6,8 @@ import 'package:traineasy/core/usecase/usecase.dart';
 import 'package:traineasy/core/result/result.dart';
 import 'package:traineasy/features/auth/domain/entities/auth_user.dart';
 import 'package:traineasy/presentation/onboarding/welcome_page.dart';
-import 'package:traineasy/presentation/home/home_page.dart';
+// import 'package:traineasy/presentation/home/home_page.dart';
+import 'package:traineasy/presentation/student/meu_treino_page.dart';
 import 'package:traineasy/presentation/trainer/dashboard_page.dart';
 import 'package:traineasy/presentation/onboarding/pending_validation_page.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
@@ -59,8 +60,8 @@ class AuthGate extends StatelessWidget {
                   final status = (data['status_validacao'] ?? '') as String;
                   TelemetryService.setUser(user.uid);
                   if (role == 'aluno') {
-                    TelemetryService.trackEvent('role_routing', {'role': role, 'status': status, 'target': 'home'});
-                    return const HomePage();
+                    TelemetryService.trackEvent('role_routing', {'role': role, 'status': status, 'target': 'meu_treino'});
+                    return const MeuTreinoPage();
                   }
                   if (role == 'personal' && status == 'validado') {
                     TelemetryService.trackEvent('role_routing', {'role': role, 'status': status, 'target': 'trainer_dashboard'});

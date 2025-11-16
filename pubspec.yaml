@@ -34,9 +34,10 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/icons/app-icon.png
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/icons/dreamflow_icon.jpg
+  image_path: assets/icons/app-icon.png
   remove_alpha_ios: true

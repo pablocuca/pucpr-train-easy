@@ -25,6 +25,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final _birthDateText = TextEditingController();
   DateTime? _birthDate;
   final _formKey = GlobalKey<FormState>();
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -110,6 +111,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   }
 
   Future<void> _onCreateAccount() async {
+    if (_submitting) return;
     if (!_formKey.currentState!.validate()) return;
     // Validação adicional de data de nascimento fora dos TextFormField
     final bdErr = _validateBirthDate();
@@ -117,6 +119,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       _showSnack(bdErr);
       return;
     }
+    setState(() { _submitting = true; });
     await TelemetryService.trackEvent('auth_register_start', {
       'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
     });
@@ -127,6 +130,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
         });
         _showSnack(_controller.error!);
+        if (mounted) setState(() { _submitting = false; });
       } else {
         // Persistir documento do usuário em Firestore
         try {
@@ -148,6 +152,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
           });
           _showSnack('Conta criada com sucesso');
+          if (mounted) setState(() { _submitting = false; });
           if (!mounted) return;
           Navigator.of(context).popUntil((route) => route.isFirst);
         } catch (e) {
@@ -157,6 +162,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             'error': e.toString(),
           });
           _showSnack('Falha ao salvar perfil no Firestore');
+          if (mounted) setState(() { _submitting = false; });
           if (!mounted) return;
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
@@ -176,6 +182,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: const Text('Criar Conta', style: AppTypography.h2),
@@ -193,95 +200,115 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.s5),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text('Crie sua conta', style: AppTypography.h2),
-                      const SizedBox(height: AppSpacing.s2),
-                      const Text('Preencha seus dados para começar a treinar.', style: AppTypography.caption),
-                      const SizedBox(height: AppSpacing.s4),
-                      TextFormField(
-                        controller: _name,
-                        validator: _validateName,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome Completo',
-                          prefixIcon: Icon(Icons.person, color: AppColors.accent),
-                        ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.s5,
                       ),
-                      const SizedBox(height: AppSpacing.s3),
-                      TextFormField(
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: _validateEmail,
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          prefixIcon: Icon(Icons.mail, color: AppColors.accent),
-                        ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                          const Text('Crie sua conta', style: AppTypography.h2),
+                          const SizedBox(height: AppSpacing.s2),
+                          const Text('Preencha seus dados para começar a treinar.', style: AppTypography.caption),
+                          const SizedBox(height: AppSpacing.s4),
+                          TextFormField(
+                            controller: _name,
+                            validator: _validateName,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Nome Completo',
+                              prefixIcon: Icon(Icons.person, color: AppColors.accent),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s3),
+                          TextFormField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: _validateEmail,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'E-mail',
+                              prefixIcon: Icon(Icons.mail, color: AppColors.accent),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s3),
+                          TextFormField(
+                            controller: _birthDateText,
+                            readOnly: true,
+                            onTap: _pickBirthDate,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Data de Nascimento',
+                              prefixIcon: Icon(Icons.calendar_today, color: AppColors.accent),
+                            ),
+                            validator: (_) => _validateBirthDate(),
+                          ),
+                          if (widget.role == UserRole.personal) ...[
+                            const SizedBox(height: AppSpacing.s3),
+                            TextFormField(
+                              controller: _cref,
+                              validator: _validateCref,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                labelText: 'Nº do CREF',
+                                prefixIcon: Icon(Icons.badge, color: AppColors.accent),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.s3),
+                          TextFormField(
+                            controller: _password,
+                            obscureText: true,
+                            validator: _validatePassword,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Senha',
+                              prefixIcon: Icon(Icons.lock, color: AppColors.accent),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s3),
+                          TextFormField(
+                            controller: _confirm,
+                            obscureText: true,
+                            validator: _validateConfirm,
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              labelText: 'Confirmar Senha',
+                              prefixIcon: Icon(Icons.lock, color: AppColors.accent),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s4),
+                      PrimaryButton(
+                        label: (_controller.loading || _submitting) ? 'Cadastrando...' : 'Cadastrar',
+                        onPressed: (_controller.loading || _submitting) ? null : _onCreateAccount,
                       ),
-                      const SizedBox(height: AppSpacing.s3),
-                      TextFormField(
-                        controller: _birthDateText,
-                        readOnly: true,
-                        onTap: _pickBirthDate,
-                        decoration: const InputDecoration(
-                          labelText: 'Data de Nascimento',
-                          prefixIcon: Icon(Icons.calendar_today, color: AppColors.accent),
-                        ),
-                        validator: (_) => _validateBirthDate(),
-                      ),
-                      if (widget.role == UserRole.personal) ...[
-                        const SizedBox(height: AppSpacing.s3),
-                        TextFormField(
-                          controller: _cref,
-                          validator: _validateCref,
-                          decoration: const InputDecoration(
-                            labelText: 'Nº do CREF',
-                            prefixIcon: Icon(Icons.badge, color: AppColors.accent),
+                          const SizedBox(height: AppSpacing.s2),
+                          Align(
+                            alignment: Alignment.center,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(builder: (_) => const LoginPageV2()),
+                                );
+                              },
+                              child: const Text('Já tem uma conta? Faça login', style: AppTypography.caption),
+                            ),
+                          ),
+                            ],
                           ),
                         ),
-                      ],
-                      const SizedBox(height: AppSpacing.s3),
-                      TextFormField(
-                        controller: _password,
-                        obscureText: true,
-                        validator: _validatePassword,
-                        decoration: const InputDecoration(
-                          labelText: 'Senha',
-                          prefixIcon: Icon(Icons.lock, color: AppColors.accent),
-                        ),
                       ),
-                      const SizedBox(height: AppSpacing.s3),
-                      TextFormField(
-                        controller: _confirm,
-                        obscureText: true,
-                        validator: _validateConfirm,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirmar Senha',
-                          prefixIcon: Icon(Icons.lock, color: AppColors.accent),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.s4),
-                      PrimaryButton(
-                        label: _controller.loading ? 'Criando...' : 'Criar Conta',
-                        onPressed: _controller.loading ? null : _onCreateAccount,
-                      ),
-                      const SizedBox(height: AppSpacing.s2),
-                      Align(
-                        alignment: Alignment.center,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const LoginPageV2()),
-                            );
-                          },
-                          child: const Text('Já tem uma conta? Faça login', style: AppTypography.caption),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

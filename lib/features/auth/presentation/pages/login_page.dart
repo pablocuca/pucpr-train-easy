@@ -143,8 +143,11 @@ class _LoginPageState extends State<LoginPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.fitness_center,
-                              color: AppColors.accent, size: 40),
+                          Image.asset(
+                            'assets/app-icon.png',
+                            width: 40,
+                            height: 40,
+                          ),
                           const SizedBox(height: AppSpacing.s4),
                           TextFormField(
                             controller: _email,

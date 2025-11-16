@@ -95,6 +95,7 @@ class _LoginPageV2State extends State<LoginPageV2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: const Text('Entrar', style: AppTypography.h2),
@@ -112,60 +113,76 @@ class _LoginPageV2State extends State<LoginPageV2> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.s5),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.fitness_center, color: AppColors.accent, size: 40),
-                          SizedBox(width: AppSpacing.s2),
-                          Text('Train Easy', style: AppTypography.h1),
-                        ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.s5,
                       ),
-                      const SizedBox(height: AppSpacing.s5),
-                      TextFormField(
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: _validateEmail,
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          prefixIcon: Icon(Icons.mail, color: AppColors.accent),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.fitness_center, color: AppColors.accent, size: 40),
+                                  SizedBox(width: AppSpacing.s2),
+                                  Text('Train Easy', style: AppTypography.h1),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.s5),
+                              TextFormField(
+                                controller: _email,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: _validateEmail,
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  labelText: 'E-mail',
+                                  prefixIcon: Icon(Icons.mail, color: AppColors.accent),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.s4),
+                              TextFormField(
+                                controller: _password,
+                                obscureText: true,
+                                validator: _validatePassword,
+                                textInputAction: TextInputAction.done,
+                                decoration: const InputDecoration(
+                                  labelText: 'Senha',
+                                  prefixIcon: Icon(Icons.lock, color: AppColors.accent),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.s5),
+                              PrimaryButton(
+                                label: _controller.loading ? 'Entrando...' : 'Entrar',
+                                onPressed: _controller.loading ? null : _onLogin,
+                              ),
+                              const SizedBox(height: AppSpacing.s2),
+                              PrimaryButton(
+                                label: 'Criar conta',
+                                isFilled: false,
+                                onPressed: _goToRegisterFlow,
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _controller.loading ? null : _onForgot,
+                                  child: const Text('Esqueci minha senha', style: AppTypography.caption),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.s4),
-                      TextFormField(
-                        controller: _password,
-                        obscureText: true,
-                        validator: _validatePassword,
-                        decoration: const InputDecoration(
-                          labelText: 'Senha',
-                          prefixIcon: Icon(Icons.lock, color: AppColors.accent),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.s5),
-                      PrimaryButton(
-                        label: _controller.loading ? 'Entrando...' : 'Entrar',
-                        onPressed: _controller.loading ? null : _onLogin,
-                      ),
-                      const SizedBox(height: AppSpacing.s2),
-                      PrimaryButton(
-                        label: 'Criar conta',
-                        isFilled: false,
-                        onPressed: _goToRegisterFlow,
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _controller.loading ? null : _onForgot,
-                          child: const Text('Esqueci minha senha', style: AppTypography.caption),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

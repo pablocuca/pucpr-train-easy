@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
+import 'package:traineasy/presentation/student/meu_treino_page.dart';
+import 'package:traineasy/core/telemetry/telemetry_service.dart';
 
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/usecase/usecase.dart';
@@ -29,7 +31,12 @@ class HomePage extends StatelessWidget {
           children: [
             const Text('App de Treino', style: AppTypography.h1),
             const SizedBox(height: AppSpacing.s4),
-            const PrimaryButton(label: 'Começar'),
+            PrimaryButton(label: 'Começar', onPressed: () {
+              TelemetryService.trackEvent('open_meu_treino', {'source': 'home'});
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MeuTreinoPage()),
+              );
+            }),
           ],
         ),
       ),
