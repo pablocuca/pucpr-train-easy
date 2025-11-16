@@ -7,6 +7,8 @@ import 'package:traineasy/presentation/home/home_page.dart';
 import 'package:traineasy/presentation/auth/widgets/auth_gate.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/config/environment_config.dart';
+import 'package:traineasy/core/telemetry/telemetry_service.dart';
+import 'dart:async';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +30,21 @@ Future<void> main() async {
   }
   
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await TelemetryService.init(
+    enableAnalytics: EnvironmentConfig.enableAnalytics,
+    enableCrashlytics: EnvironmentConfig.enableCrashlytics,
+  );
+  final app = Firebase.app();
+  debugPrint('🔎 Firebase App -> projectId=${app.options.projectId}, appId=${app.options.appId}');
   await Injector.init();
-  runApp(const MyApp());
+  FlutterError.onError = (details) {
+    Zone.current.handleUncaughtError(details.exception, details.stack ?? StackTrace.empty);
+  };
+  runZonedGuarded(() {
+    runApp(const MyApp());
+  }, (error, stack) {
+    TelemetryService.recordError(error, stack, fatal: true);
+  });
 }
 
 class MyApp extends StatelessWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/presentation/auth/login_page_v2.dart';
 import 'package:traineasy/presentation/onboarding/role_selection_page.dart';
+import 'package:traineasy/core/telemetry/telemetry_service.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -51,6 +52,7 @@ class WelcomePage extends StatelessWidget {
                     child: PrimaryButton(
                       label: 'Cadastrar-se',
                       onPressed: () {
+                        TelemetryService.trackEvent('welcome_click', {'button': 'register'});
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const RoleSelectionPage(),
@@ -66,6 +68,7 @@ class WelcomePage extends StatelessWidget {
                       label: 'Entrar',
                       isFilled: false,
                       onPressed: () {
+                        TelemetryService.trackEvent('welcome_click', {'button': 'login'});
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const LoginPageV2(),

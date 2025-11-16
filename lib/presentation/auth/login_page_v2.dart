@@ -4,6 +4,7 @@ import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:traineasy/presentation/onboarding/role_selection_page.dart';
+import 'package:traineasy/core/telemetry/telemetry_service.dart';
 
 class LoginPageV2 extends StatefulWidget {
   const LoginPageV2({super.key});
@@ -50,11 +51,20 @@ class _LoginPageV2State extends State<LoginPageV2> {
 
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    await TelemetryService.trackEvent('auth_login_start', {'method': 'email_password'});
     await _controller.signIn(_email.text.trim(), _password.text);
-    if (mounted && _controller.error != null) _showSnack(_controller.error!);
+    if (mounted && _controller.error != null) {
+      await TelemetryService.trackEvent('auth_login_failure', {'method': 'email_password'});
+      _showSnack(_controller.error!);
+    } else {
+      await TelemetryService.trackEvent('auth_login_success', {'method': 'email_password'});
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   void _goToRegisterFlow() {
+    TelemetryService.trackEvent('navigate_role_selection', {});
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const RoleSelectionPage()),
     );
@@ -66,6 +76,7 @@ class _LoginPageV2State extends State<LoginPageV2> {
       _showSnack('Informe um e-mail válido para recuperar a senha');
       return;
     }
+    await TelemetryService.trackEvent('auth_reset_request', {});
     final ok = await _controller.sendReset(email);
     if (mounted) {
       _showSnack(ok ? 'E-mail de recuperação enviado' : (_controller.error ?? 'Falha ao enviar e-mail'));

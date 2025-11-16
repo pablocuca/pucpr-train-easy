@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
+import 'package:traineasy/core/di/injector.dart';
+import 'package:traineasy/core/usecase/usecase.dart';
 
 class TrainerDashboardPage extends StatelessWidget {
   const TrainerDashboardPage({super.key});
@@ -11,6 +13,9 @@ class TrainerDashboardPage extends StatelessWidget {
         backgroundColor: AppColors.surface,
         title: const Text('Painel do Personal', style: AppTypography.h2),
         centerTitle: true,
+        actions: const [
+          _LogoutButton(),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.s4),
@@ -51,6 +56,21 @@ class TrainerDashboardPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  const _LogoutButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.logout, color: AppColors.accent),
+      onPressed: () async {
+        await Injector.signOut(const NoParams());
+      },
+      tooltip: 'Sair',
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/presentation/auth/login_page_v2.dart';
 import 'role_selection_page.dart';
+import 'package:traineasy/core/telemetry/telemetry_service.dart';
 
 class CreateAccountPage extends StatefulWidget {
   final UserRole role;
@@ -19,6 +21,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _cref = TextEditingController();
+  final _birthDateText = TextEditingController();
   DateTime? _birthDate;
   final _formKey = GlobalKey<FormState>();
 
@@ -39,6 +43,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
+    _cref.dispose();
+    _birthDateText.dispose();
     super.dispose();
   }
 
@@ -64,6 +70,20 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     return null;
   }
 
+  String? _validateBirthDate() {
+    if (_birthDate == null) return 'Selecione sua data de nascimento';
+    return null;
+  }
+
+  String? _validateCref(String? v) {
+    if (widget.role == UserRole.personal) {
+      if (v == null || v.trim().isEmpty) return 'Informe seu número do CREF';
+      // Validação simples: ao menos 5 caracteres (ajuste conforme regra real)
+      if (v.trim().length < 5) return 'CREF inválido';
+    }
+    return null;
+  }
+
   Future<void> _pickBirthDate() async {
     final now = DateTime.now();
     final initial = DateTime(now.year - 18, now.month, now.day);
@@ -74,17 +94,72 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       lastDate: now,
       helpText: 'Data de Nascimento',
     );
-    if (picked != null) setState(() => _birthDate = picked);
+    if (picked != null) {
+      setState(() {
+        _birthDate = picked;
+        _birthDateText.text = _formatDate(picked);
+      });
+    }
+  }
+
+  String _formatDate(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final yyyy = d.year.toString();
+    return '$dd/$mm/$yyyy';
   }
 
   Future<void> _onCreateAccount() async {
     if (!_formKey.currentState!.validate()) return;
-    await _controller.register(_email.text.trim(), _password.text);
+    // Validação adicional de data de nascimento fora dos TextFormField
+    final bdErr = _validateBirthDate();
+    if (bdErr != null) {
+      _showSnack(bdErr);
+      return;
+    }
+    await TelemetryService.trackEvent('auth_register_start', {
+      'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
+    });
+    final user = await _controller.register(_email.text.trim(), _password.text);
     if (mounted) {
       if (_controller.error != null) {
+        await TelemetryService.trackEvent('auth_register_failure', {
+          'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
+        });
         _showSnack(_controller.error!);
       } else {
-        _showSnack('Conta criada com sucesso');
+        // Persistir documento do usuário em Firestore
+        try {
+          final uid = user!.uid;
+          final data = <String, dynamic>{
+            'uid': uid,
+            'email': _email.text.trim(),
+            'nome': _name.text.trim(),
+            'role': widget.role == UserRole.aluno ? 'aluno' : 'personal',
+            'birthDate': _birthDate!.toIso8601String(),
+          };
+          if (widget.role == UserRole.personal) {
+            data['cref'] = _cref.text.trim();
+            data['status_validacao'] = 'pendente';
+          }
+          await FirebaseFirestore.instance.collection('users').doc(uid).set(data);
+          await TelemetryService.setUser(uid);
+          await TelemetryService.trackEvent('auth_register_success', {
+            'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
+          });
+          _showSnack('Conta criada com sucesso');
+          if (!mounted) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } catch (e) {
+          await TelemetryService.recordError(e, StackTrace.current);
+          await TelemetryService.trackEvent('user_doc_save_failure', {
+            'role': widget.role == UserRole.aluno ? 'aluno' : 'personal',
+            'error': e.toString(),
+          });
+          _showSnack('Falha ao salvar perfil no Firestore');
+          if (!mounted) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     }
   }
@@ -147,18 +222,27 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.s3),
-                      GestureDetector(
+                      TextFormField(
+                        controller: _birthDateText,
+                        readOnly: true,
                         onTap: _pickBirthDate,
-                        child: AbsorbPointer(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Data de Nascimento',
-                              prefixIcon: const Icon(Icons.calendar_today, color: AppColors.accent),
-                              hintText: _birthDate == null ? 'mm/dd/yyyy' : '${_birthDate!.day.toString().padLeft(2, '0')}/${_birthDate!.month.toString().padLeft(2, '0')}/${_birthDate!.year}',
-                            ),
+                        decoration: const InputDecoration(
+                          labelText: 'Data de Nascimento',
+                          prefixIcon: Icon(Icons.calendar_today, color: AppColors.accent),
+                        ),
+                        validator: (_) => _validateBirthDate(),
+                      ),
+                      if (widget.role == UserRole.personal) ...[
+                        const SizedBox(height: AppSpacing.s3),
+                        TextFormField(
+                          controller: _cref,
+                          validator: _validateCref,
+                          decoration: const InputDecoration(
+                            labelText: 'Nº do CREF',
+                            prefixIcon: Icon(Icons.badge, color: AppColors.accent),
                           ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: AppSpacing.s3),
                       TextFormField(
                         controller: _password,

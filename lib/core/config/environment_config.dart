@@ -29,6 +29,18 @@ class EnvironmentConfig {
     return v == 'true' || v == '1' || v == 'yes';
   }
 
+  static bool get enableCrashlytics {
+    final raw = dotenv.get('ENABLE_CRASHLYTICS', fallback: 'false');
+    final v = raw.trim().toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
+
+  static bool get enableAnalytics {
+    final raw = dotenv.get('ENABLE_ANALYTICS', fallback: 'false');
+    final v = raw.trim().toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
+
   // Validation
   static bool get isValid {
     // Mobile-only: valida Android e iOS
