@@ -53,6 +53,10 @@ app.*.map.json
 /firestore.rules
 /firestore.indexes.json
 
+# Android signing keys - DO NOT COMMIT
+key.properties
+*.jks
+
 # Environment files
 .env
 .env.local
