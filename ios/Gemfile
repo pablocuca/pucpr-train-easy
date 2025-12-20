@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+# Força uma versão recente para evitar dependências antigas
+gem "fastlane", ">= 2.210.0"
+
+gem "cocoapods"
