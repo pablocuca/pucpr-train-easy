@@ -28,7 +28,11 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
-      - name: 🚀 Run Fastlane Beta
+      - name: � Install CocoaPods Dependencies
+        run: pod install
+        working-directory: ios
+
+      - name: �🚀 Run Fastlane Beta
         # Removemos o plugin e usamos o comando direto do terminal
         # Isso garante que ele execute EXATAMENTE o que queremos
         run: bundle exec fastlane beta
