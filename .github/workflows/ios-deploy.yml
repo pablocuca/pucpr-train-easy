@@ -1,0 +1,41 @@
+name: iOS Beta Deploy
+
+on:
+  # Permite disparar manualmente pelo botão no GitHub
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    name: Build & Deploy iOS
+    runs-on: macos-latest
+    
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: 📦 Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: 💎 Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: 🚀 Run Fastlane Beta
+        uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: 'deploy'
+          subdirectory: 'ios'
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
