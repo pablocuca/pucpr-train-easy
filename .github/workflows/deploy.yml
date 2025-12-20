@@ -1,6 +1,9 @@
 name: iOS Beta Deploy
 
 on:
+  push:
+    branches:
+      - main
   # Permite disparar manualmente pelo botão no GitHub
   workflow_dispatch:
 
