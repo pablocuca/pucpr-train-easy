@@ -29,10 +29,10 @@ jobs:
           working-directory: ios
 
       - name: 🚀 Run Fastlane Beta
-        uses: maierj/fastlane-action@v3.1.0
-        with:
-          lane: 'beta'
-          subdirectory: 'ios'
+        # Removemos o plugin e usamos o comando direto do terminal
+        # Isso garante que ele execute EXATAMENTE o que queremos
+        run: bundle exec fastlane beta
+        working-directory: ios
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
