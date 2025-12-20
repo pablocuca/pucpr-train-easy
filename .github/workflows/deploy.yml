@@ -35,7 +35,11 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
-      - name: 🚀 Run Fastlane Beta
+      - name: � Install CocoaPods
+        run: pod install
+        working-directory: ios
+
+      - name: �🚀 Run Fastlane Beta
         timeout-minutes: 60
         run: bundle exec fastlane beta
         working-directory: ios
