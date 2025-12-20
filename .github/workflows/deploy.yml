@@ -25,6 +25,13 @@ jobs:
           echo "${{ secrets.ENV_FILE }}" > .env
           echo "✅ .env created"
 
+      - name: 🧹 Clean iOS Flutter Config
+        run: |
+          rm -f ios/Flutter/Generated.xcconfig
+          rm -f ios/Flutter/flutter_export_environment.sh
+          rm -rf ios/.symlinks
+          echo "✅ iOS Flutter config cleaned"
+
       - name: 📦 Install Flutter Dependencies
         run: flutter pub get
 
