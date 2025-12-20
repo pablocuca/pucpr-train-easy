@@ -10,6 +10,7 @@ jobs:
   build_ios:
     name: Build & Deploy iOS
     runs-on: macos-15
+    timeout-minutes: 90
     
     steps:
       - name: ⬇️ Checkout code
@@ -21,62 +22,79 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: � Flutter Doctor
-        run: flutter doctor -v
+      - name: 📋 Show Environment
+        run: |
+          echo "=== Flutter ==="
+          flutter --version
+          echo ""
+          echo "=== Xcode ==="
+          xcodebuild -version
+          echo ""
+          echo "=== Ruby ==="
+          ruby --version
 
-      - name: �🔧 Create .env File
+      - name: 🔧 Create .env File
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
-          echo "✅ .env created with $(wc -l < .env) lines"
+          echo "✅ .env created"
 
-      - name: 🧹 Clean Flutter (Full Reset)
+      - name: 🧹 Clean Everything
         run: |
           flutter clean
-          rm -rf ios/Pods
-          rm -rf ios/Podfile.lock
-          rm -rf ios/.symlinks
-          rm -rf ios/Flutter/Flutter.framework
-          rm -rf ios/Flutter/Flutter.podspec
-          rm -f ios/Flutter/Generated.xcconfig
-          rm -f ios/Flutter/flutter_export_environment.sh
+          rm -rf ios/Pods ios/Podfile.lock ios/.symlinks
+          rm -rf ios/Flutter/Generated.xcconfig ios/Flutter/flutter_export_environment.sh
+          rm -rf ~/Library/Developer/Xcode/DerivedData
           echo "✅ Full clean completed"
 
-      - name: 📦 Install Flutter Dependencies
+      - name: 📦 Flutter Pub Get
         run: flutter pub get
 
-      - name: 🔨 Pre-build Flutter iOS
+      - name: � Verify Generated.xcconfig
         run: |
-          echo "� Building Flutter iOS assets..."
-          flutter build ios --release --no-codesign --verbose
-          echo "✅ Flutter iOS pre-build completed"
+          echo "=== Generated.xcconfig ==="
+          cat ios/Flutter/Generated.xcconfig
+          echo ""
+          echo "=== Verifying paths are correct ==="
+          grep "FLUTTER_ROOT\|FLUTTER_APPLICATION_PATH" ios/Flutter/Generated.xcconfig
 
-      - name: �💎 Setup Ruby
+      - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
           working-directory: ios
 
-      - name: 📦 Install CocoaPods
-        run: |
-          pod install --repo-update
-          echo "✅ CocoaPods installed"
+      - name: 📦 Pod Install
+        run: pod install --repo-update
         working-directory: ios
 
-      - name: 📋 Verify Generated.xcconfig
+      - name: � Build with xcodebuild (Direct)
+        timeout-minutes: 30
         run: |
-          echo "=== Generated.xcconfig ==="
-          cat ios/Flutter/Generated.xcconfig || echo "File not found!"
-          echo ""
-          echo "=== flutter_export_environment.sh ==="
-          cat ios/Flutter/flutter_export_environment.sh || echo "File not found!"
-        
-      - name: 🚀 Run Fastlane Beta
-        timeout-minutes: 45
-        run: bundle exec fastlane beta
+          set -x
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Runner.xcarchive \
+            archive \
+            FLUTTER_BUILD_MODE=release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee xcodebuild.log | xcpretty || {
+              echo "=== XCODEBUILD FAILED ==="
+              echo "Last 100 lines of log:"
+              tail -100 xcodebuild.log
+              exit 1
+            }
+        working-directory: ios
+
+      - name: 🚀 Run Fastlane (Skip Build)
+        timeout-minutes: 30
+        run: bundle exec fastlane beta_upload
         working-directory: ios
         env:
-          VERBOSE_SCRIPT_LOGGING: "true"
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}

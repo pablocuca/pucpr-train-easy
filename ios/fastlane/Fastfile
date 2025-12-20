@@ -25,16 +25,11 @@ platform :ios do
     end
   end
 
-  # 2. A "Lane" (tarefa) de Beta
+  # 2. A "Lane" (tarefa) de Beta - Build completo
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    # Garante que os certificados estão baixados (modo leitura para segurança)
     match(type: "appstore", readonly: true)
-
-    # Incrementa o número do build (Build Number)
     increment_build_number(xcodeproj: "Runner.xcodeproj")
-
-    # Compila o app (Gera o .ipa)
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
@@ -42,10 +37,22 @@ platform :ios do
       export_method: "app-store",
       clean: true
     )
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
 
-    # Envia para o TestFlight
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true # Não trava esperando a Apple
+  # 3. Lane de Upload apenas - usa archive já gerado
+  desc "Upload pre-built archive to TestFlight"
+  lane :beta_upload do
+    match(type: "appstore", readonly: true)
+    
+    # Exporta o archive para IPA
+    build_app(
+      archive_path: "build/Runner.xcarchive",
+      export_method: "app-store",
+      skip_build_archive: true,
+      skip_archive: true
     )
+    
+    upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 end
