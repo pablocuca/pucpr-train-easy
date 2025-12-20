@@ -35,10 +35,8 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
-      - name: 🔨 Build Flutter iOS
-        run: flutter build ios --release --no-codesign
-
       - name: 🚀 Run Fastlane Beta
+        timeout-minutes: 60
         run: bundle exec fastlane beta
         working-directory: ios
         env:
