@@ -49,7 +49,7 @@ jobs:
       - name: 📦 Flutter Pub Get
         run: flutter pub get
 
-      - name: � Verify Generated.xcconfig
+      - name: 📋 Verify Generated.xcconfig
         run: |
           echo "=== Generated.xcconfig ==="
           cat ios/Flutter/Generated.xcconfig
@@ -68,10 +68,9 @@ jobs:
         run: pod install --repo-update
         working-directory: ios
 
-      - name: � Build with xcodebuild (Direct)
+      - name: 🔨 Build with xcodebuild
         timeout-minutes: 30
         run: |
-          set -x
           xcodebuild -workspace Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
@@ -82,12 +81,15 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee xcodebuild.log | xcpretty || {
-              echo "=== XCODEBUILD FAILED ==="
-              echo "Last 100 lines of log:"
-              tail -100 xcodebuild.log
-              exit 1
-            }
+            2>&1 | tee xcodebuild.log
+          
+          BUILD_RESULT=${PIPESTATUS[0]}
+          if [ $BUILD_RESULT -ne 0 ]; then
+            echo "=== BUILD FAILED ==="
+            tail -100 xcodebuild.log
+            exit 1
+          fi
+          echo "✅ Build completed successfully"
         working-directory: ios
 
       - name: 🚀 Run Fastlane (Skip Build)
