@@ -48,7 +48,6 @@ app.*.map.json
 # Firebase configuration files - DO NOT COMMIT SENSITIVE CREDENTIALS
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
-/lib/firebase_options.dart
 /firebase.json
 /firestore.rules
 /firestore.indexes.json

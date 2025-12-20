@@ -1,11 +1,12 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'app_config.dart';
 
 class EnvironmentConfig {
   static Future<void> load() async {
     await dotenv.load(fileName: '.env');
   }
 
-  // Firebase Configuration
+  // ========== SENSÍVEIS (do .env) ==========
   static String get projectId => dotenv.get('FIREBASE_PROJECT_ID', fallback: '');
   static String get androidAppId => dotenv.get('FIREBASE_ANDROID_APP_ID', fallback: '');
   static String get iosAppId => dotenv.get('FIREBASE_IOS_APP_ID', fallback: '');
@@ -15,35 +16,18 @@ class EnvironmentConfig {
   static String get storageBucket => dotenv.get('FIREBASE_STORAGE_BUCKET', fallback: '');
   static String get messagingSenderId => dotenv.get('FIREBASE_MESSAGING_SENDER_ID', fallback: '');
   static String get measurementId => dotenv.get('FIREBASE_MEASUREMENT_ID', fallback: '');
-
-  // Platform Configuration
-  static String get androidPackageName => dotenv.get('ANDROID_PACKAGE_NAME', fallback: 'com.example.traineasy');
-  static String get iosBundleId => dotenv.get('IOS_BUNDLE_ID', fallback: 'com.example.traineasy');
-
-  // AI Configuration
   static String get geminiApiKey => dotenv.get('GEMINI_API_KEY', fallback: '');
-  static String get geminiModel => dotenv.get('GEMINI_MODEL', fallback: '');
-  static bool get enableGeminiLogs {
-    final raw = dotenv.get('ENABLE_GEMINI_LOGS', fallback: 'false');
-    final v = raw.trim().toLowerCase();
-    return v == 'true' || v == '1' || v == 'yes';
-  }
 
-  static bool get enableCrashlytics {
-    final raw = dotenv.get('ENABLE_CRASHLYTICS', fallback: 'false');
-    final v = raw.trim().toLowerCase();
-    return v == 'true' || v == '1' || v == 'yes';
-  }
-
-  static bool get enableAnalytics {
-    final raw = dotenv.get('ENABLE_ANALYTICS', fallback: 'false');
-    final v = raw.trim().toLowerCase();
-    return v == 'true' || v == '1' || v == 'yes';
-  }
+  // ========== NÃO SENSÍVEIS (do AppConfig) ==========
+  static String get geminiModel => AppConfig.geminiModel;
+  static bool get enableGeminiLogs => AppConfig.enableGeminiLogs;
+  static bool get enableCrashlytics => AppConfig.enableCrashlytics;
+  static bool get enableAnalytics => AppConfig.enableAnalytics;
+  static String get androidPackageName => AppConfig.androidPackageName;
+  static String get iosBundleId => AppConfig.iosBundleId;
 
   // Validation
   static bool get isValid {
-    // Mobile-only: valida Android e iOS
     return projectId.isNotEmpty &&
         androidAppId.isNotEmpty &&
         iosAppId.isNotEmpty;

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  # Permite disparar manualmente pelo botão no GitHub
   workflow_dispatch:
 
 jobs:
@@ -21,31 +20,27 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: 🔧 Create .env File
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "✅ .env created"
+
       - name: 📦 Install Flutter Dependencies
         run: flutter pub get
 
-      - name: � Generate Firebase Options
-        run: |
-          cat > lib/firebase_options.dart << 'EOF'
-          ${{ secrets.FIREBASE_OPTIONS_DART }}
-          EOF
-          echo "Firebase options file created"
-
-      - name: �💎 Setup Ruby
+      - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
           working-directory: ios
 
-      - name: 📦 Install CocoaPods Dependencies
+      - name: 📦 Install CocoaPods
         run: pod install
         working-directory: ios
 
-      - name: � Build Flutter (iOS Release)
-        run: |
-          flutter build ios --release --no-codesign
-          echo "Flutter build completed, artifacts ready for Xcode"
+      - name: 🔨 Build Flutter iOS
+        run: flutter build ios --release --no-codesign
 
       - name: 🚀 Run Fastlane Beta
         run: bundle exec fastlane beta
