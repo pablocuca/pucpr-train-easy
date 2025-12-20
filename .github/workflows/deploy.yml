@@ -24,7 +24,14 @@ jobs:
       - name: 📦 Install Flutter Dependencies
         run: flutter pub get
 
-      - name: 💎 Setup Ruby
+      - name: � Generate Firebase Options
+        run: |
+          cat > lib/firebase_options.dart << 'EOF'
+          ${{ secrets.FIREBASE_OPTIONS_DART }}
+          EOF
+          echo "Firebase options file created"
+
+      - name: �💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
