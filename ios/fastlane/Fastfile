@@ -45,14 +45,17 @@ platform :ios do
   lane :beta_upload do
     match(type: "appstore", readonly: true)
     
-    # Exporta o archive para IPA
-    build_app(
+    # Exporta o archive para IPA com assinatura correta
+    gym(
       archive_path: "build/Runner.xcarchive",
       export_method: "app-store",
-      skip_build_archive: true,
-      skip_archive: true
+      output_directory: "build",
+      output_name: "Runner"
     )
     
-    upload_to_testflight(skip_waiting_for_build_processing: true)
+    upload_to_testflight(
+      ipa: "build/Runner.ipa",
+      skip_waiting_for_build_processing: true
+    )
   end
 end
