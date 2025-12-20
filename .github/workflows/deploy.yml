@@ -35,10 +35,6 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
-      - name: 📦 Install CocoaPods
-        run: pod install
-        working-directory: ios
-
       - name: 🔨 Build Flutter iOS
         run: flutter build ios --release --no-codesign
 
