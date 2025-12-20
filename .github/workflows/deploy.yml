@@ -24,25 +24,23 @@ jobs:
       - name: 📦 Install Flutter Dependencies
         run: flutter pub get
 
-      - name: � Build Flutter (iOS Release)
-        run: |
-          flutter build ios --release --no-codesign
-          echo "Flutter build completed, artifacts ready for Xcode"
-
-      - name: �💎 Setup Ruby
+      - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
           working-directory: ios
 
-      - name: � Install CocoaPods Dependencies
+      - name: 📦 Install CocoaPods Dependencies
         run: pod install
         working-directory: ios
 
-      - name: �🚀 Run Fastlane Beta
-        # Removemos o plugin e usamos o comando direto do terminal
-        # Isso garante que ele execute EXATAMENTE o que queremos
+      - name: � Build Flutter (iOS Release)
+        run: |
+          flutter build ios --release --no-codesign
+          echo "Flutter build completed, artifacts ready for Xcode"
+
+      - name: 🚀 Run Fastlane Beta
         run: bundle exec fastlane beta
         working-directory: ios
         env:
