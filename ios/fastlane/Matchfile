@@ -1,0 +1,9 @@
+git_url("https://github.com/pablocuca/traineasy-certificates.git")
+
+storage_mode("git")
+
+# Mudamos de "development" para "appstore" pois é o foco do CI/CD
+type("appstore") 
+
+# Adicione esta linha para garantir que ele pegue o app certo
+app_identifier(["br.com.pablocustodio.traineasy"])
