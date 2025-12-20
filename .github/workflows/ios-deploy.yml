@@ -31,7 +31,7 @@ jobs:
       - name: 🚀 Run Fastlane Beta
         uses: maierj/fastlane-action@v3.1.0
         with:
-          lane: 'deploy'
+          lane: 'beta'
           subdirectory: 'ios'
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
