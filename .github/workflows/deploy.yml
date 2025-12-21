@@ -62,7 +62,7 @@ jobs:
         working-directory: ios
 
       - name: 🔨 Pre-build Flutter iOS
-        timeout-minutes: 20
+        timeout-minutes: 45
         run: |
           echo "Building Flutter iOS assets..."
           flutter build ios --release --no-codesign
