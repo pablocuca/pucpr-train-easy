@@ -61,6 +61,13 @@ jobs:
         run: pod install --repo-update
         working-directory: ios
 
+      - name: 🔨 Pre-build Flutter iOS
+        timeout-minutes: 20
+        run: |
+          echo "Building Flutter iOS assets..."
+          flutter build ios --release --no-codesign
+          echo "✅ Flutter build completed"
+
       - name: 🔨 Build Archive
         timeout-minutes: 30
         run: |
@@ -73,9 +80,18 @@ jobs:
             FLUTTER_BUILD_MODE=release \
             2>&1 | tee xcodebuild_archive.log
           
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "=== BUILD FAILED ==="
-            tail -100 xcodebuild_archive.log
+          BUILD_RESULT=${PIPESTATUS[0]}
+          if [ $BUILD_RESULT -ne 0 ]; then
+            echo ""
+            echo "========================================="
+            echo "=== BUILD FAILED - ERRORS FOUND ==="
+            echo "========================================="
+            echo ""
+            echo "=== Errors: ==="
+            grep -i "error:" xcodebuild_archive.log | tail -30 || echo "No explicit errors found"
+            echo ""
+            echo "=== Last 50 lines: ==="
+            tail -50 xcodebuild_archive.log
             exit 1
           fi
           echo "✅ Archive created"
