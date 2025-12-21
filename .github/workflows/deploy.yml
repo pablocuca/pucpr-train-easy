@@ -24,13 +24,8 @@ jobs:
 
       - name: 📋 Show Environment
         run: |
-          echo "=== Flutter ==="
           flutter --version
-          echo ""
-          echo "=== Xcode ==="
           xcodebuild -version
-          echo ""
-          echo "=== Ruby ==="
           ruby --version
 
       - name: 🔧 Create .env File
@@ -44,31 +39,29 @@ jobs:
           rm -rf ios/Pods ios/Podfile.lock ios/.symlinks
           rm -rf ios/Flutter/Generated.xcconfig ios/Flutter/flutter_export_environment.sh
           rm -rf ~/Library/Developer/Xcode/DerivedData
-          echo "✅ Full clean completed"
 
       - name: 📦 Flutter Pub Get
         run: flutter pub get
 
-      - name: 📋 Verify Generated.xcconfig
-        run: |
-          echo "=== Generated.xcconfig ==="
-          cat ios/Flutter/Generated.xcconfig
-          echo ""
-          echo "=== Verifying paths are correct ==="
-          grep "FLUTTER_ROOT\|FLUTTER_APPLICATION_PATH" ios/Flutter/Generated.xcconfig
-
-      - name: 💎 Setup Ruby
+      - name: � Setup Ruby & Fastlane
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
           working-directory: ios
 
+      - name: � Setup Match Certificates
+        run: bundle exec fastlane match appstore --readonly
+        working-directory: ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
       - name: 📦 Pod Install
         run: pod install --repo-update
         working-directory: ios
 
-      - name: 🔨 Build with xcodebuild
+      - name: 🔨 Build Archive
         timeout-minutes: 30
         run: |
           xcodebuild -workspace Runner.xcworkspace \
@@ -78,27 +71,66 @@ jobs:
             -archivePath build/Runner.xcarchive \
             archive \
             FLUTTER_BUILD_MODE=release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee xcodebuild.log
+            2>&1 | tee xcodebuild_archive.log
           
-          BUILD_RESULT=${PIPESTATUS[0]}
-          if [ $BUILD_RESULT -ne 0 ]; then
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "=== BUILD FAILED ==="
-            tail -100 xcodebuild.log
+            tail -100 xcodebuild_archive.log
             exit 1
           fi
-          echo "✅ Build completed successfully"
+          echo "✅ Archive created"
+          ls -la build/
         working-directory: ios
 
-      - name: 🚀 Run Fastlane (Skip Build)
-        timeout-minutes: 30
-        run: bundle exec fastlane beta_upload
+      - name: 📋 Create ExportOptions.plist
+        run: |
+          cat > ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>HZRNS9BK37</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>br.com.pablocustodio.traineasy</key>
+              <string>match AppStore br.com.pablocustodio.traineasy</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          echo "✅ ExportOptions.plist created"
+        working-directory: ios
+
+      - name: 📦 Export IPA
+        timeout-minutes: 10
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/Runner.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist ExportOptions.plist \
+            2>&1 | tee xcodebuild_export.log
+          
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "=== EXPORT FAILED ==="
+            tail -50 xcodebuild_export.log
+            exit 1
+          fi
+          echo "✅ IPA exported"
+          ls -la build/ipa/
+        working-directory: ios
+
+      - name: 🚀 Upload to TestFlight
+        timeout-minutes: 15
+        run: bundle exec fastlane pilot upload --ipa build/ipa/Runner.ipa --skip_waiting_for_build_processing true
         working-directory: ios
         env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
