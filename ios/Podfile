@@ -48,9 +48,11 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Force iOS 15.0 minimum for all pods
     target.build_configurations.each do |config|
+      # Force iOS 15.0 minimum for all pods
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      # Allow non-modular includes (required for Firebase precompiled binaries)
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
     end
   end
 end
