@@ -69,8 +69,15 @@ jobs:
           echo "✅ Flutter build completed"
 
       - name: 🔨 Build Archive
-        timeout-minutes: 30
+        timeout-minutes: 60
+        env:
+          FLUTTER_BUILD_MODE: release
+          FLUTTER_BUILD_DIR: build
         run: |
+          # Set Flutter environment variables
+          export FLUTTER_ROOT=$(dirname $(dirname $(which flutter)))
+          export FLUTTER_APPLICATION_PATH=$(pwd)/..
+          
           xcodebuild -workspace Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
@@ -78,6 +85,7 @@ jobs:
             -archivePath build/Runner.xcarchive \
             archive \
             FLUTTER_BUILD_MODE=release \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             2>&1 | tee xcodebuild_archive.log
           
           BUILD_RESULT=${PIPESTATUS[0]}
