@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:traineasy/core/di/injector.dart';
@@ -146,7 +146,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             data['cref'] = _cref.text.trim();
             data['status_validacao'] = 'pendente';
           }
-          await FirebaseFirestore.instance.collection('users').doc(uid).set(data);
+          await FirebaseDatabase.instance.ref('users/$uid').set(data);
           await TelemetryService.setUser(uid);
           await TelemetryService.trackEvent('auth_register_success', {
             'role': widget.role == UserRole.aluno ? 'aluno' : 'personal'
@@ -161,7 +161,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             'role': widget.role == UserRole.aluno ? 'aluno' : 'personal',
             'error': e.toString(),
           });
-          _showSnack('Falha ao salvar perfil no Firestore');
+          _showSnack('Falha ao salvar perfil');
           if (mounted) setState(() { _submitting = false; });
           if (!mounted) return;
           Navigator.of(context).popUntil((route) => route.isFirst);

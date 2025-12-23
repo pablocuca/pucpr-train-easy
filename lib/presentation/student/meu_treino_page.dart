@@ -4,7 +4,7 @@ import 'package:traineasy/presentation/profile/profile_page.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/usecase/usecase.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 import 'package:traineasy/presentation/marketplace/marketplace_page.dart';
 import 'dart:convert' as convert;
@@ -23,7 +23,7 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
   bool _anamnesePreenchida = false;
   bool _gerandoTreino = false;
   String _treinoStatus = '';
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSub;
+  StreamSubscription<DatabaseEvent>? _userSub;
   final _formKeyAnamnese = GlobalKey<FormState>();
   final _objetivo = TextEditingController();
   String? _nivel;
@@ -66,9 +66,9 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
       });
       return;
     }
-    final doc =
-        await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-    final data = doc.data();
+    final snapshot =
+        await FirebaseDatabase.instance.ref('users/${u.uid}').get();
+    final data = snapshot.value as Map<dynamic, dynamic>?;
     setState(() {
       _treinoAtivo = (data?['treino_ativo'] ?? false) as bool;
       _anamnesePreenchida = (data?['anamnese_preenchida'] ?? false) as bool;
@@ -81,12 +81,11 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
   void _startUserListener() {
     final u = Injector.authRepository.currentUser;
     if (u == null) return;
-    _userSub = FirebaseFirestore.instance
-        .collection('users')
-        .doc(u.uid)
-        .snapshots()
-        .listen((snap) {
-      final data = snap.data() ?? {};
+    _userSub = FirebaseDatabase.instance
+        .ref('users/${u.uid}')
+        .onValue
+        .listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
       final treino = (data['treino'] ?? {}) as Map;
       final status = treino['status']?.toString() ?? '';
       final ativo = (data['treino_ativo'] ?? false) as bool;
@@ -120,7 +119,7 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
     if (!_formKeyAnamnese.currentState!.validate()) return;
     final u = Injector.authRepository.currentUser;
     if (u == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(u.uid).update({
+    await FirebaseDatabase.instance.ref('users/${u.uid}').update({
       'anamnese': {
         'objetivo': _objetivo.text.trim(),
         'nivel': _nivel,
@@ -142,16 +141,15 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
     }
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.s4),
-      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(u.uid)
-            .snapshots(),
+      child: StreamBuilder<DatabaseEvent>(
+        stream: FirebaseDatabase.instance
+            .ref('users/${u.uid}')
+            .onValue,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final data = snap.data?.data() ?? {};
+          final data = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
           final treino = (data['treino'] ?? {}) as Map;
           final planText = (treino['plano_texto'] ?? '') as String;
           Map<String, dynamic>? planMap =
@@ -315,16 +313,15 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
     }
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.s4),
-      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(u.uid)
-            .snapshots(),
+      child: StreamBuilder<DatabaseEvent>(
+        stream: FirebaseDatabase.instance
+            .ref('users/${u.uid}')
+            .onValue,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final data = snap.data?.data() ?? {};
+          final data = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
           final treino = (data['treino'] ?? {}) as Map;
           final planText = (treino['plano_texto'] ?? '') as String;
           Map<String, dynamic>? planMap =
@@ -696,9 +693,9 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
       return;
     }
     try {
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-      final data = doc.data() ?? {};
+      final snapshot =
+          await FirebaseDatabase.instance.ref('users/${u.uid}').get();
+      final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
       final anamnese = (data['anamnese'] as Map?) ?? {};
       final objetivo = anamnese['objetivo'] ?? '';
       final nivel = anamnese['nivel'] ?? '';
@@ -717,7 +714,7 @@ class _MeuTreinoPageState extends State<MeuTreinoPage> {
       } catch (_) {}
       plan ??= _tryParseJsonPlan(planText);
 
-      await FirebaseFirestore.instance.collection('users').doc(u.uid).update({
+      await FirebaseDatabase.instance.ref('users/${u.uid}').update({
         'treino_ativo': true,
         'treino': {
           'status': 'auto_aprovado',

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
@@ -34,8 +34,8 @@ class _CrefValidationPageState extends State<CrefValidationPage> {
       setState(() { _loading = false; _error = 'Usuário não autenticado'; });
       return;
     }
-    final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-    final data = doc.data();
+    final snapshot = await FirebaseDatabase.instance.ref('users/${u.uid}').get();
+    final data = snapshot.value as Map<dynamic, dynamic>?;
     if (data != null) {
       setState(() {
         _cref.text = (data['cref'] ?? '') as String;
@@ -54,7 +54,7 @@ class _CrefValidationPageState extends State<CrefValidationPage> {
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('users').doc(u.uid).update({
+      await FirebaseDatabase.instance.ref('users/${u.uid}').update({
         'cref': _cref.text.trim(),
         'status_validacao': 'pendente',
       });

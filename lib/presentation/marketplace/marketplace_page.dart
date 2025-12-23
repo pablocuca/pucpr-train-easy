@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
 import 'dart:convert' as convert;
@@ -25,15 +25,16 @@ class _MarketplacePageState extends State<MarketplacePage> {
       return;
     }
     try {
-      final alunoDoc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-      final personalDoc = await FirebaseFirestore.instance.collection('users').doc(personalId).get();
-      final aluno = alunoDoc.data() ?? {};
+      final alunoSnapshot = await FirebaseDatabase.instance.ref('users/${u.uid}').get();
+      final personalSnapshot = await FirebaseDatabase.instance.ref('users/$personalId').get();
+      final aluno = alunoSnapshot.value as Map<dynamic, dynamic>? ?? {};
       final anamnese = (aluno['anamnese'] ?? {}) as Map;
       final objetivo = anamnese['objetivo'] ?? '';
       final nivel = anamnese['nivel'] ?? '';
       final dias = anamnese['dias_semana'] ?? 3;
       final restricoes = anamnese['restricoes'] ?? '';
-      final pm = (personalDoc.data() ?? {})['prompt_mestre']?.toString() ?? '';
+      final personalData = personalSnapshot.value as Map<dynamic, dynamic>? ?? {};
+      final pm = personalData['prompt_mestre']?.toString() ?? '';
 
       final prompt = 'Crie um plano SEMANAL estruturado apenas em JSON. '
           'Use o seguinte schema: {"orientation": string, "days": [{"label": string, "exercises": [{"name": string, "sets": string, "notes": string}]}]}. '
@@ -46,7 +47,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
       Map<String, dynamic>? plan;
       try { plan = convert.jsonDecode(planText) as Map<String, dynamic>; } catch (_) {}
 
-      await FirebaseFirestore.instance.collection('users').doc(u.uid).update({
+      await FirebaseDatabase.instance.ref('users/${u.uid}').update({
         'treino': {
           'status': 'pendente',
           'gerado_em': DateTime.now().toIso8601String(),
@@ -92,12 +93,12 @@ class _MarketplacePageState extends State<MarketplacePage> {
           children: [
             const SizedBox(height: AppSpacing.s2),
             Expanded(
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .where('role', isEqualTo: 'personal')
-                    .where('status_validacao', isEqualTo: 'validado')
-                    .snapshots(),
+              child: StreamBuilder<DatabaseEvent>(
+                stream: FirebaseDatabase.instance
+                    .ref('users')
+                    .orderByChild('role')
+                    .equalTo('personal')
+                    .onValue,
                 builder: (context, snap) {
                   if (snap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -118,18 +119,25 @@ class _MarketplacePageState extends State<MarketplacePage> {
                       ),
                     );
                   }
-                  final docs = snap.data?.docs ?? [];
-                  if (docs.isEmpty) {
+                  final data = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
+                  // Filter for validated personals (since RTDB can only filter by one field)
+                  final validPersonals = data.entries.where((e) {
+                    final m = e.value as Map<dynamic, dynamic>;
+                    return m['status_validacao'] == 'validado';
+                  }).toList();
+                  
+                  if (validPersonals.isEmpty) {
                     return const Center(child: Text('Nenhum personal validado encontrado'));
                   }
                   return ListView.separated(
-                    itemCount: docs.length,
+                    itemCount: validPersonals.length,
                     separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s2),
                     itemBuilder: (context, index) {
-                      final d = docs[index].data();
+                      final entry = validPersonals[index];
+                      final d = entry.value as Map<dynamic, dynamic>;
                       final nome = (d['nome'] ?? '') as String;
                       final espec = (d['especialidade'] ?? '') as String;
-                      final id = (d['uid'] ?? docs[index].id) as String;
+                      final id = (d['uid'] ?? entry.key) as String;
                       return ListTile(
                         leading: const Icon(Icons.person, color: AppColors.accent),
                         title: Text(nome.isEmpty ? 'Personal' : nome, style: AppTypography.body),

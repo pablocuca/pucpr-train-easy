@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/usecase/usecase.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:traineasy/presentation/profile/cref_validation_page.dart';
 import 'package:traineasy/presentation/profile/profile_page.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
@@ -71,13 +71,12 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage> {
               if (u == null) {
                 return const Center(child: Text('Usuário não autenticado'));
               }
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .where('role', isEqualTo: 'aluno')
-                    .where('treino.personalId', isEqualTo: u.uid)
-                    .where('treino.status', isEqualTo: 'pendente')
-                    .snapshots(),
+              return StreamBuilder<DatabaseEvent>(
+                stream: FirebaseDatabase.instance
+                    .ref('users')
+                    .orderByChild('role')
+                    .equalTo('aluno')
+                    .onValue,
                 builder: (context, snap) {
                   if (snap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -97,16 +96,22 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage> {
                       ),
                     );
                   }
-                  final docs = snap.data?.docs ?? [];
-                  if (docs.isEmpty) {
+                  final allData = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
+                  // Filter for students with pending training from this personal
+                  final pendingEntries = allData.entries.where((e) {
+                    final m = e.value as Map<dynamic, dynamic>;
+                    final treino = m['treino'] as Map? ?? {};
+                    return treino['personalId'] == u.uid && treino['status'] == 'pendente';
+                  }).toList();
+                  if (pendingEntries.isEmpty) {
                     return const Center(child: Text('Nenhum aluno listado'));
                   }
                   return ListView(
-                    children: docs.map((d) {
-                      final data = d.data();
+                    children: pendingEntries.map((entry) {
+                      final data = entry.value as Map<dynamic, dynamic>;
                       final nome = (data['nome'] ?? '') as String;
 
-                      final alunoId = (data['uid'] ?? d.id) as String;
+                      final alunoId = (data['uid'] ?? entry.key) as String;
                       return ListTile(
                         leading:
                             const Icon(Icons.timer, color: AppColors.accent),
@@ -134,12 +139,12 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage> {
     }
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.s4),
-      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .where('role', isEqualTo: 'aluno')
-            .where('treino.personalId', isEqualTo: u.uid)
-            .snapshots(),
+      child: StreamBuilder<DatabaseEvent>(
+        stream: FirebaseDatabase.instance
+            .ref('users')
+            .orderByChild('role')
+            .equalTo('aluno')
+            .onValue,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -158,21 +163,21 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage> {
               ),
             );
           }
-          final all = snap.data?.docs ?? [];
-          final docs = all
-              .where((d) =>
-                  (((d.data()['treino'] ?? {}) as Map)['status']?.toString() ??
-                      '') !=
-                  'pendente')
-              .toList();
-          if (docs.isEmpty) {
+          final allData = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
+          // Filter for students of this personal that are NOT pending
+          final approvedEntries = allData.entries.where((e) {
+            final m = e.value as Map<dynamic, dynamic>;
+            final treino = m['treino'] as Map? ?? {};
+            return treino['personalId'] == u.uid && treino['status'] != 'pendente';
+          }).toList();
+          if (approvedEntries.isEmpty) {
             return const Center(child: Text('Nenhum aluno aprovado'));
           }
           return ListView.separated(
-            itemCount: docs.length,
+            itemCount: approvedEntries.length,
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s2),
             itemBuilder: (context, idx) {
-              final data = docs[idx].data();
+              final data = approvedEntries[idx].value as Map<dynamic, dynamic>;
               final nome = (data['nome'] ?? '') as String;
               return ListTile(
                 leading: const Icon(Icons.person, color: AppColors.accent),
@@ -221,14 +226,14 @@ class _PromptConfigBanner extends StatelessWidget {
     if (u == null) {
       return const SizedBox.shrink();
     }
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+    return StreamBuilder<DatabaseEvent>(
       stream:
-          FirebaseFirestore.instance.collection('users').doc(u.uid).snapshots(),
+          FirebaseDatabase.instance.ref('users/${u.uid}').onValue,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        final data = snap.data?.data() ?? {};
+        final data = snap.data?.snapshot.value as Map<dynamic, dynamic>? ?? {};
         final pm = (data['prompt_mestre'] ?? '') as String;
         if (pm.isNotEmpty) {
           return const SizedBox.shrink();
@@ -296,9 +301,8 @@ class _PromptConfigBanner extends StatelessWidget {
                   }
                   final nav = Navigator.of(context);
                   final messenger = ScaffoldMessenger.of(context);
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(u.uid)
+                  await FirebaseDatabase.instance
+                      .ref('users/${u.uid}')
                       .update({'prompt_mestre': txt});
                   await TelemetryService.trackEvent(
                       'prompt_mestre_save', {'source': 'personal'});
@@ -328,16 +332,15 @@ void _openEvaluation(BuildContext context, String alunoId) {
             right: AppSpacing.s4,
             bottom: AppSpacing.s4,
           ),
-          child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            future: FirebaseFirestore.instance
-                .collection('users')
-                .doc(alunoId)
+          child: FutureBuilder<DataSnapshot>(
+            future: FirebaseDatabase.instance
+                .ref('users/$alunoId')
                 .get(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final data = snap.data?.data() ?? {};
+              final data = snap.data?.value as Map<dynamic, dynamic>? ?? {};
               final nome = (data['nome'] ?? '') as String;
               final treino = (data['treino'] ?? {}) as Map;
               final plano = (treino['plano_texto'] ?? '') as String;
@@ -786,16 +789,17 @@ void _openEvaluation(BuildContext context, String alunoId) {
                               label: 'Aprovar',
                               onPressed: () async {
                                 final texto = controller.text.trim();
-                                await FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(alunoId)
-                                    .update({
-                                  'treino.status': 'aprovado',
-                                  'treino.plano_texto': texto,
-                                  if (editedPlan != null)
-                                    'treino.plan': editedPlan,
+                                final updates = <String, dynamic>{
+                                  'treino/status': 'aprovado',
+                                  'treino/plano_texto': texto,
                                   'treino_ativo': true,
-                                });
+                                };
+                                if (editedPlan != null) {
+                                  updates['treino/plan'] = editedPlan;
+                                }
+                                await FirebaseDatabase.instance
+                                    .ref('users/$alunoId')
+                                    .update(updates);
                                 await TelemetryService.trackEvent(
                                     'trainer_approve', {'alunoId': alunoId});
                                 if (!context.mounted) return;

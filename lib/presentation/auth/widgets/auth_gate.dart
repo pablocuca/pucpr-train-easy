@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/usecase/usecase.dart';
@@ -43,16 +43,15 @@ class AuthGate extends StatelessWidget {
             final user = snap.data;
             final authed = user != null;
             if (authed) {
-              return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .snapshots(),
+              return StreamBuilder<DatabaseEvent>(
+                stream: FirebaseDatabase.instance
+                    .ref('users/${user.uid}')
+                    .onValue,
                 builder: (context, userDocSnap) {
                   if (userDocSnap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  final data = userDocSnap.data?.data();
+                  final data = userDocSnap.data?.snapshot.value as Map<dynamic, dynamic>?;
                   if (data == null) {
                     return const Center(child: CircularProgressIndicator());
                   }

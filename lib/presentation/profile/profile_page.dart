@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:train_easy_design_system/train_easy_design_system.dart';
 import 'package:traineasy/core/di/injector.dart';
 import 'package:traineasy/core/telemetry/telemetry_service.dart';
@@ -40,8 +40,8 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() { _loading = false; _error = 'Usuário não autenticado'; });
       return;
     }
-    final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-    final data = doc.data();
+    final snapshot = await FirebaseDatabase.instance.ref('users/${u.uid}').get();
+    final data = snapshot.value as Map<dynamic, dynamic>?;
     if (data != null) {
       setState(() {
         _name.text = (data['nome'] ?? '') as String;
@@ -92,11 +92,12 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('users').doc(u.uid).update({
+      final updates = <String, dynamic>{
         'nome': _name.text.trim(),
         'birthDate': _birth?.toIso8601String() ?? '',
-        if (_isPersonal) 'prompt_mestre': _prompt.text.trim(),
-      });
+      };
+      if (_isPersonal) updates['prompt_mestre'] = _prompt.text.trim();
+      await FirebaseDatabase.instance.ref('users/${u.uid}').update(updates);
       await TelemetryService.trackEvent('profile_save', {'source': 'profile'});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil salvo')));
