@@ -10,7 +10,7 @@ jobs:
   build_ios:
     name: Build & Deploy iOS
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 60
     
     steps:
       - name: ⬇️ Checkout code
@@ -43,14 +43,14 @@ jobs:
       - name: 📦 Flutter Pub Get
         run: flutter pub get
 
-      - name: � Setup Ruby & Fastlane
+      - name: 💎 Setup Ruby & Fastlane
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
           working-directory: ios
 
-      - name: � Setup Match Certificates
+      - name: 🔐 Setup Match Certificates
         run: bundle exec fastlane match appstore --readonly
         working-directory: ios
         env:
@@ -61,49 +61,29 @@ jobs:
         run: pod install --repo-update
         working-directory: ios
 
-      - name: 🔨 Pre-build Flutter iOS
-        timeout-minutes: 45
+      - name: 🔨 Build Flutter iOS
+        timeout-minutes: 15
         run: |
-          echo "Building Flutter iOS assets..."
           flutter build ios --release --no-codesign
           echo "✅ Flutter build completed"
 
       - name: 🔨 Build Archive
-        timeout-minutes: 60
-        env:
-          FLUTTER_BUILD_MODE: release
-          FLUTTER_BUILD_DIR: build
+        timeout-minutes: 15
         run: |
-          # Set Flutter environment variables
-          export FLUTTER_ROOT=$(dirname $(dirname $(which flutter)))
-          export FLUTTER_APPLICATION_PATH=$(pwd)/..
-          
           xcodebuild -workspace Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Runner.xcarchive \
             archive \
-            FLUTTER_BUILD_MODE=release \
-            COMPILER_INDEX_STORE_ENABLE=NO \
             2>&1 | tee xcodebuild_archive.log
           
-          BUILD_RESULT=${PIPESTATUS[0]}
-          if [ $BUILD_RESULT -ne 0 ]; then
-            echo ""
-            echo "========================================="
-            echo "=== BUILD FAILED - ERRORS FOUND ==="
-            echo "========================================="
-            echo ""
-            echo "=== Errors: ==="
-            grep -i "error:" xcodebuild_archive.log | tail -30 || echo "No explicit errors found"
-            echo ""
-            echo "=== Last 50 lines: ==="
-            tail -50 xcodebuild_archive.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "=== BUILD FAILED ==="
+            grep -i "error:" xcodebuild_archive.log | tail -20
             exit 1
           fi
           echo "✅ Archive created"
-          ls -la build/
         working-directory: ios
 
       - name: 📋 Create ExportOptions.plist
@@ -129,7 +109,6 @@ jobs:
           </dict>
           </plist>
           EOF
-          echo "✅ ExportOptions.plist created"
         working-directory: ios
 
       - name: 📦 Export IPA
@@ -138,14 +117,8 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/Runner.xcarchive \
             -exportPath build/ipa \
-            -exportOptionsPlist ExportOptions.plist \
-            2>&1 | tee xcodebuild_export.log
+            -exportOptionsPlist ExportOptions.plist
           
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "=== EXPORT FAILED ==="
-            tail -50 xcodebuild_export.log
-            exit 1
-          fi
           echo "✅ IPA exported"
           ls -la build/ipa/
         working-directory: ios
