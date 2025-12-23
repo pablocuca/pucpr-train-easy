@@ -62,13 +62,13 @@ jobs:
         working-directory: ios
 
       - name: 🔨 Build Flutter iOS
-        timeout-minutes: 15
+        timeout-minutes: 30
         run: |
           flutter build ios --release --no-codesign
           echo "✅ Flutter build completed"
 
       - name: 🔨 Build Archive
-        timeout-minutes: 15
+        timeout-minutes: 45
         run: |
           xcodebuild -workspace Runner.xcworkspace \
             -scheme Runner \
@@ -124,7 +124,7 @@ jobs:
         working-directory: ios
 
       - name: 🚀 Upload to TestFlight
-        timeout-minutes: 15
+        timeout-minutes: 30
         run: bundle exec fastlane pilot upload --ipa build/ipa/Runner.ipa --skip_waiting_for_build_processing true
         working-directory: ios
         env:
